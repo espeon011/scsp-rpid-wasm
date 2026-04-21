@@ -1,0 +1,15 @@
+{
+  "name": "scsp-rpid-wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "scsp_rpid_wasm_bg.wasm",
+    "scsp_rpid_wasm.js",
+    "scsp_rpid_wasm.d.ts"
+  ],
+  "main": "scsp_rpid_wasm.js",
+  "types": "scsp_rpid_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
