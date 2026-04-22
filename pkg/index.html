@@ -27,13 +27,24 @@ igevazgbrddbcsvrvnngf
 
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
-                        const start = performance.now();
                         const input = document.getElementById("input").value;
-                        const result = superseq(input);
+                        document.getElementById("do").disabled = true;
+                        let result;
+                        const start = performance.now();
+                        try {
+                            result = superseq(input);
+                        } catch (error) {
+                            console.error(error);
+                            document.getElementById("output").textContent = "";
+                            document.getElementById("output-title").textContent = "Error";
+                            document.getElementById("do").disabled = false;
+                            return;
+                        }
                         const end = performance.now();
                         const wall_time = Math.round((end - start) / 10) / 100;
                         document.getElementById("output").textContent = result.solution;
                         document.getElementById("output-title").textContent = `Result (primal bound: ${result.solution.length}, dual bound: ${result.dual_bound}, wall time: ${wall_time}s)`;
+                        document.getElementById("do").disabled = false;
                     });
                 });
             };
