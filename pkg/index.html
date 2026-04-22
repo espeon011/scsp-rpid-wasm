@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>SCSP RPID WASM</title>
 </head>
-<body>
+<body style="background: white;">
     <h1>SCSP RPID WASM</h1>
     <textarea id="input" rows="10" cols="50" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off">
 tkgnkuhmpxnhtqgxzvxis
@@ -24,11 +24,11 @@ igevazgbrddbcsvrvnngf
             document.getElementById("do").onclick = () => {
                 document.getElementById("output-title").textContent = "Computing...";
                 document.getElementById("output").textContent = "";
+                document.getElementById("do").disabled = true;
 
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                         const input = document.getElementById("input").value;
-                        document.getElementById("do").disabled = true;
                         let result;
                         const start = performance.now();
                         try {
