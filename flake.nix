@@ -35,7 +35,6 @@
           name = "rust";
           nativeBuildInputs = [
             rustToolchain
-            pkgs.mold
             pkgs.wasm-pack
           ];
           buildInputs = [
@@ -58,7 +57,6 @@
 
           nativeBuildInputs = [
             # rustToolchain
-            pkgs.mold
           ];
           buildInputs = [];
           packages = [];
