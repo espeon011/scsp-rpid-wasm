@@ -230,39 +230,7 @@ impl<T: Eq + Copy + std::hash::Hash> Dp for ModelRpid<T> {
         &self,
         state: &Self::State,
     ) -> impl IntoIterator<Item = (Self::State, Self::CostType, Self::Label)> {
-        self.instance
-            .chars()
-            .iter()
-            .filter(|&c| {
-                state
-                    .indices
-                    .iter()
-                    .zip(self.instance.seqs.iter())
-                    .any(|(&idx, seq)| idx < seq.len() && seq[idx] == *c)
-            })
-            .map(|&c| {
-                let successor = ScspState {
-                    indices: state
-                        .indices
-                        .iter()
-                        .zip(self.instance.seqs.iter())
-                        .map(|(&idx, seq)| {
-                            if idx < seq.len() && seq[idx] == c {
-                                idx + 1
-                            } else {
-                                idx
-                            }
-                        })
-                        .collect(),
-                    sol_len: state.sol_len + 1,
-                };
-
-                (successor, 1, c)
-            })
-            .collect::<Vec<(Self::State, Self::CostType, Self::Label)>>()
-
-        // let mut a = self
-        //     .instance
+        // self.instance
         //     .chars()
         //     .iter()
         //     .filter(|&c| {
@@ -288,22 +256,55 @@ impl<T: Eq + Copy + std::hash::Hash> Dp for ModelRpid<T> {
         //                 .collect(),
         //             sol_len: state.sol_len + 1,
         //         };
-        //         let weight: usize = state
-        //             .indices
-        //             .iter()
-        //             .zip(self.instance.seqs.iter())
-        //             .filter(|&(&idx, seq)| idx < seq.len() && seq[idx] == c)
-        //             .map(|(&idx, seq)| seq.len() - idx)
-        //             .sum();
 
-        //         ((successor, 1, c), weight)
+        //         (successor, 1, c)
         //     })
-        //     .collect::<Vec<_>>();
-
-        // a.sort_by_key(|&(ref _item, weight)| std::cmp::Reverse(weight));
-        // a.into_iter()
-        //     .map(|(item, _weight)| item)
         //     .collect::<Vec<(Self::State, Self::CostType, Self::Label)>>()
+
+        let mut succs_with_weight = self
+            .instance
+            .chars()
+            .iter()
+            .filter(|&c| {
+                state
+                    .indices
+                    .iter()
+                    .zip(self.instance.seqs.iter())
+                    .any(|(&idx, seq)| idx < seq.len() && seq[idx] == *c)
+            })
+            .map(|&c| {
+                let successor = ScspState {
+                    indices: state
+                        .indices
+                        .iter()
+                        .zip(self.instance.seqs.iter())
+                        .map(|(&idx, seq)| {
+                            if idx < seq.len() && seq[idx] == c {
+                                idx + 1
+                            } else {
+                                idx
+                            }
+                        })
+                        .collect(),
+                    sol_len: state.sol_len + 1,
+                };
+                let weight: usize = state
+                    .indices
+                    .iter()
+                    .zip(self.instance.seqs.iter())
+                    .filter(|&(&idx, seq)| idx < seq.len() && seq[idx] == c)
+                    .map(|(&idx, seq)| seq.len() - idx)
+                    .sum();
+
+                ((successor, 1, c), weight)
+            })
+            .collect::<Vec<_>>();
+
+        succs_with_weight.sort_by_key(|&(ref _item, weight)| std::cmp::Reverse(weight));
+        succs_with_weight
+            .into_iter()
+            .map(|(item, _weight)| item)
+            .collect::<Vec<(Self::State, Self::CostType, Self::Label)>>()
     }
 }
 
