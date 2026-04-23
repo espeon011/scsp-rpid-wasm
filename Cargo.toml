@@ -2,6 +2,9 @@
 name = "scsp-rpid-wasm"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+repository = "https://github.com/espeon011/scsp-rpid-wasm"
+description = "SCSP を RPID で定式化して解く"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

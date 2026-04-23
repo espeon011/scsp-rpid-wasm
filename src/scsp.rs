@@ -32,15 +32,16 @@ impl<T: Eq + Copy + Hash> ScspInstance<T> {
     }
 }
 
-impl ScspInstance<char> {
-    pub fn from_str(s: &str) -> Self {
-        Self::new(
+impl std::str::FromStr for ScspInstance<char> {
+    type Err = std::convert::Infallible;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self::new(
             &s.lines()
                 .map(|line| line.trim())
                 .filter(|line| !line.is_empty())
                 .map(|line| line.chars().collect())
                 .collect::<Vec<Vec<char>>>(),
-        )
+        ))
     }
 }
 
@@ -52,12 +53,12 @@ pub struct ScspSolution<T: Eq + Copy + std::hash::Hash> {
 
 impl<T: Eq + Copy + std::hash::Hash> ScspSolution<T> {
     /// 解の目的関数値を返す.
-    fn _objective(&self) -> Option<i32> {
+    pub fn objective(&self) -> Option<i32> {
         self.seq.as_ref().map(|x| x.len() as i32)
     }
 
     /// 解が実行可能かどうか, つまり問題インスタンスの各文字列の超配列になっているかどうかを判定する.
-    fn _is_feasible(&self, instance: &ScspInstance<T>) -> bool {
+    pub fn is_feasible(&self, instance: &ScspInstance<T>) -> bool {
         let Some(sol) = &self.seq else {
             return false;
         };
@@ -82,14 +83,14 @@ impl<T: Eq + Copy + std::hash::Hash> ScspSolution<T> {
 
     /// 解が最適かどうか判定する.
     /// 実行可能解が与えられておりかつそのコストがバウンドと等しいときかつそのときに限り最適である.
-    fn _is_optimal(&self, instance: &ScspInstance<T>) -> bool {
-        let Some(obj) = self._objective() else {
+    pub fn is_optimal(&self, instance: &ScspInstance<T>) -> bool {
+        let Some(obj) = self.objective() else {
             return false;
         };
         let Some(bound) = self.bound else {
             return false;
         };
 
-        self._is_feasible(instance) && obj == bound
+        self.is_feasible(instance) && obj == bound
     }
 }

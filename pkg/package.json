@@ -1,7 +1,13 @@
 {
   "name": "scsp-rpid-wasm",
   "type": "module",
+  "description": "SCSP を RPID で定式化して解く",
   "version": "0.1.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/espeon011/scsp-rpid-wasm"
+  },
   "files": [
     "scsp_rpid_wasm_bg.wasm",
     "scsp_rpid_wasm.js",

@@ -4,47 +4,49 @@ use rpid::solvers::Search;
 use rpid::{Bound, Dominance, Dp};
 use std::collections::HashSet;
 
-// type BoundTable2 = Vec<Vec<Vec<Vec<i32>>>>;
+type BoundTable2 = Vec<Vec<Vec<Vec<i32>>>>;
 type BoundTable3 = Vec<Vec<Vec<Vec<Vec<Vec<i32>>>>>>;
+
+const BOUND3_MAGIC: usize = 8;
 
 #[derive(Clone)]
 pub struct ModelRpid<T: Eq + Copy + std::hash::Hash> {
     pub instance: ScspInstance<T>,
-    // pub bound_table2: BoundTable2,
+    pub bound_table2: BoundTable2,
     pub bound_table3: BoundTable3,
 }
 
-// fn scs2len<T: Eq>(s1: &[T], s2: &[T]) -> Vec<Vec<i32>> {
-//     let len1 = s1.len();
-//     let len2 = s2.len();
+fn scs2len<T: Eq>(s1: &[T], s2: &[T]) -> Vec<Vec<i32>> {
+    let len1 = s1.len();
+    let len2 = s2.len();
 
-//     let mut dp = vec![vec![(len1 + len2) as i32; len2 + 1]; len1 + 1];
+    let mut dp = vec![vec![(len1 + len2) as i32; len2 + 1]; len1 + 1];
 
-//     // dp[i1][len2] = len1 - i1
-//     for (i1, dprow) in dp.iter_mut().enumerate() {
-//         dprow[len2] = (len1 - i1) as i32;
-//     }
-//     // dp[len1][i2] = len2 - i2
-//     for (i2, dpcell) in dp[len1].iter_mut().enumerate() {
-//         *dpcell = (len2 - i2) as i32;
-//     }
+    // dp[i1][len2] = len1 - i1
+    for (i1, dprow) in dp.iter_mut().enumerate() {
+        dprow[len2] = (len1 - i1) as i32;
+    }
+    // dp[len1][i2] = len2 - i2
+    for (i2, dpcell) in dp[len1].iter_mut().enumerate() {
+        *dpcell = (len2 - i2) as i32;
+    }
 
-//     for i1 in (0..=len1).rev() {
-//         for i2 in (0..=len2).rev() {
-//             if i1 == len1 || i2 == len2 {
-//                 continue;
-//             }
+    for i1 in (0..=len1).rev() {
+        for i2 in (0..=len2).rev() {
+            if i1 == len1 || i2 == len2 {
+                continue;
+            }
 
-//             if s1[i1] == s2[i2] {
-//                 dp[i1][i2] = dp[i1 + 1][i2 + 1] + 1;
-//             } else {
-//                 dp[i1][i2] = i32::min(dp[i1 + 1][i2], dp[i1][i2 + 1]) + 1;
-//             }
-//         }
-//     }
+            if s1[i1] == s2[i2] {
+                dp[i1][i2] = dp[i1 + 1][i2 + 1] + 1;
+            } else {
+                dp[i1][i2] = i32::min(dp[i1 + 1][i2], dp[i1][i2 + 1]) + 1;
+            }
+        }
+    }
 
-//     dp
-// }
+    dp
+}
 
 fn scs3len<T: Eq + Copy + std::hash::Hash>(s1: &[T], s2: &[T], s3: &[T]) -> Vec<Vec<Vec<i32>>> {
     let len1 = s1.len();
@@ -112,23 +114,23 @@ fn scs3len<T: Eq + Copy + std::hash::Hash>(s1: &[T], s2: &[T], s3: &[T]) -> Vec<
     dp
 }
 
-// fn bound_table2<T: Eq + Copy + std::hash::Hash>(instance: &ScspInstance<T>) -> BoundTable2 {
-//     let mut bound_table = Vec::new();
+fn bound_table2<T: Eq + Copy + std::hash::Hash>(instance: &ScspInstance<T>) -> BoundTable2 {
+    let mut bound_table = Vec::new();
 
-//     for (idx1, s1) in instance.seqs.iter().enumerate() {
-//         let mut bound = Vec::with_capacity(idx1);
-//         for (_idx2, s2) in instance.seqs.iter().enumerate().take(idx1) {
-//             bound.push(scs2len(s1, s2));
-//         }
-//         bound_table.push(bound);
-//     }
+    for (idx1, s1) in instance.seqs.iter().enumerate() {
+        let mut bound = Vec::with_capacity(idx1);
+        for (_idx2, s2) in instance.seqs.iter().enumerate().take(idx1) {
+            bound.push(scs2len(s1, s2));
+        }
+        bound_table.push(bound);
+    }
 
-//     bound_table
-// }
+    bound_table
+}
 
 fn bound_table3<T: Eq + Copy + std::hash::Hash>(instance: &ScspInstance<T>) -> BoundTable3 {
     let mut bound_table = Vec::new();
-    for (idx1, s1) in instance.seqs.iter().enumerate() {
+    for (idx1, s1) in instance.seqs.iter().enumerate().take(BOUND3_MAGIC) {
         let mut bound_row = Vec::with_capacity(idx1);
         for (idx2, s2) in instance.seqs.iter().enumerate().take(idx1) {
             let mut bound = Vec::with_capacity(idx2);
@@ -145,10 +147,15 @@ fn bound_table3<T: Eq + Copy + std::hash::Hash>(instance: &ScspInstance<T>) -> B
 
 impl<T: Eq + Copy + std::hash::Hash + Default> ModelRpid<T> {
     pub fn new(instance: &ScspInstance<T>) -> Self {
+        let mut instance = instance.clone();
+        instance
+            .seqs
+            .sort_by_key(|seq| std::cmp::Reverse(seq.len()));
+
         Self {
-            instance: instance.clone(),
-            // bound_table2: bound_table2(instance),
-            bound_table3: bound_table3(instance),
+            bound_table2: bound_table2(&instance),
+            bound_table3: bound_table3(&instance),
+            instance,
         }
     }
 
@@ -167,6 +174,8 @@ impl<T: Eq + Copy + std::hash::Hash + Default> ModelRpid<T> {
         }
 
         let search_param = SearchParameters::<i32> {
+            primal_bound: Some(self.instance.seqs.iter().map(|seq| seq.len() as i32).sum()),
+            dual_bound: self.instance.seqs.iter().map(|seq| seq.len() as i32).max(),
             quiet: false,
             time_limit: Some(time_limit as f64 * 60.),
             ..Default::default()
@@ -251,6 +260,50 @@ impl<T: Eq + Copy + std::hash::Hash> Dp for ModelRpid<T> {
                 (successor, 1, c)
             })
             .collect::<Vec<(Self::State, Self::CostType, Self::Label)>>()
+
+        // let mut a = self
+        //     .instance
+        //     .chars()
+        //     .iter()
+        //     .filter(|&c| {
+        //         state
+        //             .indices
+        //             .iter()
+        //             .zip(self.instance.seqs.iter())
+        //             .any(|(&idx, seq)| idx < seq.len() && seq[idx] == *c)
+        //     })
+        //     .map(|&c| {
+        //         let successor = ScspState {
+        //             indices: state
+        //                 .indices
+        //                 .iter()
+        //                 .zip(self.instance.seqs.iter())
+        //                 .map(|(&idx, seq)| {
+        //                     if idx < seq.len() && seq[idx] == c {
+        //                         idx + 1
+        //                     } else {
+        //                         idx
+        //                     }
+        //                 })
+        //                 .collect(),
+        //             sol_len: state.sol_len + 1,
+        //         };
+        //         let weight: usize = state
+        //             .indices
+        //             .iter()
+        //             .zip(self.instance.seqs.iter())
+        //             .filter(|&(&idx, seq)| idx < seq.len() && seq[idx] == c)
+        //             .map(|(&idx, seq)| seq.len() - idx)
+        //             .sum();
+
+        //         ((successor, 1, c), weight)
+        //     })
+        //     .collect::<Vec<_>>();
+
+        // a.sort_by_key(|&(ref _item, weight)| std::cmp::Reverse(weight));
+        // a.into_iter()
+        //     .map(|(item, _weight)| item)
+        //     .collect::<Vec<(Self::State, Self::CostType, Self::Label)>>()
     }
 }
 
@@ -320,113 +373,86 @@ impl<T: Eq + Copy + std::hash::Hash> Bound for ModelRpid<T> {
     type CostType = i32;
 
     fn get_dual_bound(&self, state: &Self::State) -> Option<Self::CostType> {
-        // 1) バウンドなし
-        // let ret = 0;
+        let ret = 0;
 
-        // 2) 残っている長さの最大値
-        // let ret = state
-        //     .indices
-        //     .iter()
-        //     .zip(self.instance.seqs.iter())
-        //     .map(|(&idx, seq)| (seq.len() - idx) as i32)
-        //     .max()
-        //     .unwrap_or(0);
+        // 任意の 2 つの残っている部分の SCS 長の最大値
+        let ret = ret.max(
+            self.bound_table2
+                .iter()
+                .zip(state.indices.iter())
+                .map(|(bound_row, &i1)| {
+                    bound_row
+                        .iter()
+                        .zip(state.indices.iter())
+                        .map(|(dp, &i2)| dp[i1][i2])
+                        .max()
+                        .unwrap_or(0)
+                })
+                .max()
+                .unwrap_or(0),
+        );
 
-        // 3) 任意の 2 つの残っている部分の SCS 長の最大値
-        // let ret = self
-        //     .bound_table2
-        //     .iter()
-        //     .zip(state.indices.iter())
-        //     .map(|(bound_row, &i1)| {
-        //         bound_row
-        //             .iter()
-        //             .zip(state.indices.iter())
-        //             .map(|(dp, &i2)| dp[i1][i2])
-        //             .max()
-        //             .unwrap_or(0)
-        //     })
-        //     .max()
-        //     .unwrap_or(0);
+        // 任意の 3 つの残っている部分の SCS 長の最大値
+        let ret = ret.max(
+            self.bound_table3
+                .iter()
+                .zip(state.indices.iter())
+                .map(|(bv1, &i1)| {
+                    bv1.iter()
+                        .zip(state.indices.iter())
+                        .map(|(bv2, &i2)| {
+                            bv2.iter()
+                                .zip(state.indices.iter())
+                                .map(|(bv3, &i3)| bv3[i1][i2][i3])
+                                .max()
+                                .unwrap_or(0)
+                        })
+                        .max()
+                        .unwrap_or(0)
+                })
+                .max()
+                .unwrap_or(0),
+        );
 
-        // 4) 残っている中で長い方から 2 つの SCS 長.
+        // 残っている中で長い方から 3 つの SCS 長.
         // let mut first = (0, state.indices[0], self.instance.seqs[0].len());
         // let mut second = (1, state.indices[1], self.instance.seqs[1].len());
+        // let mut third = (2, state.indices[2], self.instance.seqs[2].len());
+        // if first.2 - first.1 < second.2 - second.1 {
+        //     std::mem::swap(&mut first, &mut second);
+        // }
+        // if second.2 - second.1 < third.2 - third.1 {
+        //     std::mem::swap(&mut second, &mut third);
+        // }
         // if first.2 - first.1 < second.2 - second.1 {
         //     std::mem::swap(&mut first, &mut second);
         // }
         // for (i, (&idx, seq)) in state.indices.iter().zip(&self.instance.seqs).enumerate() {
+        //     if i < 3 {
+        //         continue;
+        //     }
+
         //     if seq.len() - idx > first.2 - first.1 {
+        //         third = second;
         //         second = first;
         //         first = (i, idx, seq.len());
         //     } else if i != first.0 && seq.len() - idx > second.2 - second.1 {
+        //         third = second;
         //         second = (i, idx, seq.len());
+        //     } else if i != first.0 && i != second.0 && seq.len() - idx > third.2 - third.1 {
+        //         third = (i, idx, seq.len());
         //     }
         // }
-        // if first.0 <= second.0 {
+        // if first.0 < second.0 {
         //     std::mem::swap(&mut first, &mut second);
         // }
-        // let ret = self.bound_table2[first.0][second.0][first.1][second.1];
-
-        // 5) 任意の 3 つの残っている部分の SCS 長の最大値
-        // let ret = self
-        //     .bound_table3
-        //     .iter()
-        //     .zip(state.indices.iter())
-        //     .map(|(bv1, &i1)| {
-        //         bv1.iter()
-        //             .zip(state.indices.iter())
-        //             .map(|(bv2, &i2)| {
-        //                 bv2.iter()
-        //                     .zip(state.indices.iter())
-        //                     .map(|(bv3, &i3)| bv3[i1][i2][i3])
-        //                     .max()
-        //                     .unwrap_or(0)
-        //             })
-        //             .max()
-        //             .unwrap_or(0)
-        //     })
-        //     .max()
-        //     .unwrap_or(0);
-
-        // 6) 残っている中で長い方から 3 つの SCS 長.
-        let mut first = (0, state.indices[0], self.instance.seqs[0].len());
-        let mut second = (1, state.indices[1], self.instance.seqs[1].len());
-        let mut third = (2, state.indices[2], self.instance.seqs[2].len());
-        if first.2 - first.1 < second.2 - second.1 {
-            std::mem::swap(&mut first, &mut second);
-        }
-        if second.2 - second.1 < third.2 - third.1 {
-            std::mem::swap(&mut second, &mut third);
-        }
-        if first.2 - first.1 < second.2 - second.1 {
-            std::mem::swap(&mut first, &mut second);
-        }
-        for (i, (&idx, seq)) in state.indices.iter().zip(&self.instance.seqs).enumerate() {
-            if i < 3 {
-                continue;
-            }
-
-            if seq.len() - idx > first.2 - first.1 {
-                third = second;
-                second = first;
-                first = (i, idx, seq.len());
-            } else if i != first.0 && seq.len() - idx > second.2 - second.1 {
-                third = second;
-                second = (i, idx, seq.len());
-            } else if i != first.0 && i != second.0 && seq.len() - idx > third.2 - third.1 {
-                third = (i, idx, seq.len());
-            }
-        }
-        if first.0 < second.0 {
-            std::mem::swap(&mut first, &mut second);
-        }
-        if second.0 < third.0 {
-            std::mem::swap(&mut second, &mut third);
-        }
-        if first.0 < second.0 {
-            std::mem::swap(&mut first, &mut second);
-        }
-        let ret = self.bound_table3[first.0][second.0][third.0][first.1][second.1][third.1];
+        // if second.0 < third.0 {
+        //     std::mem::swap(&mut second, &mut third);
+        // }
+        // if first.0 < second.0 {
+        //     std::mem::swap(&mut first, &mut second);
+        // }
+        // let ret = self.bound_table3[first.0][second.0][third.0][first.1][second.1][third.1];
 
         Some(ret)
     }

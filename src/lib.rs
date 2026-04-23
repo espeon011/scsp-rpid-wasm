@@ -1,5 +1,5 @@
-mod model;
-mod scsp;
+pub mod model;
+pub mod scsp;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen]
@@ -37,7 +37,7 @@ impl ComputeResult {
 
 #[wasm_bindgen]
 pub fn superseq(input: &str) -> ComputeResult {
-    let instance = scsp::ScspInstance::from_str(input);
+    let instance: scsp::ScspInstance<char> = input.parse().unwrap();
     let model = model::ModelRpid::new(&instance);
     let solution = model.solve(1u32);
     ComputeResult::from_solution(solution)
