@@ -199,7 +199,6 @@ impl<T: Eq + Copy + Hash + Default> ModelRpid<T> {
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct ScspState {
     indices: Vec<usize>,
-    sol_len: i32,
 }
 
 impl<T: Eq + Copy + Hash> Dp for ModelRpid<T> {
@@ -210,7 +209,6 @@ impl<T: Eq + Copy + Hash> Dp for ModelRpid<T> {
     fn get_target(&self) -> Self::State {
         ScspState {
             indices: vec![0; self.instance.seqs.len()],
-            sol_len: 0,
         }
     }
 
@@ -287,7 +285,6 @@ impl<T: Eq + Copy + Hash> Dp for ModelRpid<T> {
                             }
                         })
                         .collect(),
-                    sol_len: state.sol_len + 1,
                 };
                 let weight: usize = state
                     .indices
@@ -309,63 +306,46 @@ impl<T: Eq + Copy + Hash> Dp for ModelRpid<T> {
     }
 }
 
+// impl<T: Eq + Copy + Hash> Dominance for ModelRpid<T> {
+//     type State = ScspState;
+//     type Key = Vec<usize>;
+
+//     fn get_key(&self, state: &Self::State) -> Self::Key {
+//         state.indices.clone()
+//     }
+// }
+
 #[derive(PartialEq, Eq, Hash)]
 pub struct ScspKey;
 
 impl<T: Eq + Copy + Hash> Dominance for ModelRpid<T> {
     type State = ScspState;
-    // type Key = Vec<usize>;
     type Key = ScspKey;
 
     fn get_key(&self, _state: &Self::State) -> Self::Key {
-        // state.indices.clone()
         ScspKey {}
     }
 
-    fn compare(&self, _a: &Self::State, _b: &Self::State) -> Option<std::cmp::Ordering> {
-        if _a.sol_len < _b.sol_len {
-            if _a
-                .indices
-                .iter()
-                .zip(_b.indices.iter())
-                .all(|(&x, &y)| x >= y)
-            {
-                Some(std::cmp::Ordering::Greater)
-            } else {
-                None
-            }
-        } else if _a.sol_len > _b.sol_len {
-            if _a
-                .indices
-                .iter()
-                .zip(_b.indices.iter())
-                .all(|(&x, &y)| x <= y)
-            {
-                Some(std::cmp::Ordering::Less)
-            } else {
-                None
-            }
-        } else {
-            // _a.sol_len == _b.sol_len
-            let mut a_is_better = false;
-            let mut b_is_better = false;
-            for (x, y) in _a.indices.iter().zip(_b.indices.iter()) {
-                a_is_better |= x > y;
-                b_is_better |= x < y;
+    fn compare(&self, a: &Self::State, b: &Self::State) -> Option<std::cmp::Ordering> {
+        let a_is_better = a
+            .indices
+            .iter()
+            .zip(b.indices.iter())
+            .all(|(&x, &y)| x >= y);
+        let b_is_better = a
+            .indices
+            .iter()
+            .zip(b.indices.iter())
+            .all(|(&x, &y)| x <= y);
 
-                if a_is_better && b_is_better {
-                    return None;
-                }
-            }
-            if !a_is_better && !b_is_better {
-                Some(std::cmp::Ordering::Equal)
-            } else if a_is_better {
-                Some(std::cmp::Ordering::Greater)
-            } else if b_is_better {
-                Some(std::cmp::Ordering::Less)
-            } else {
-                unreachable!();
-            }
+        if a_is_better && b_is_better {
+            Some(std::cmp::Ordering::Equal)
+        } else if a_is_better {
+            Some(std::cmp::Ordering::Greater)
+        } else if b_is_better {
+            Some(std::cmp::Ordering::Less)
+        } else {
+            None
         }
     }
 }
