@@ -3,6 +3,7 @@ use rpid::prelude::{CabsParameters, SearchParameters};
 use rpid::solvers::Search;
 use rpid::{Bound, Dominance, Dp};
 use std::collections::HashSet;
+use std::hash::Hash;
 
 type BoundTable2 = Vec<Vec<Vec<Vec<i32>>>>;
 type BoundTable3 = Vec<Vec<Vec<Vec<Vec<Vec<i32>>>>>>;
@@ -10,7 +11,7 @@ type BoundTable3 = Vec<Vec<Vec<Vec<Vec<Vec<i32>>>>>>;
 const BOUND3_MAGIC: usize = 8;
 
 #[derive(Clone)]
-pub struct ModelRpid<T: Eq + Copy + std::hash::Hash> {
+pub struct ModelRpid<T: Eq + Copy + Hash> {
     pub instance: ScspInstance<T>,
     pub bound_table2: BoundTable2,
     pub bound_table3: BoundTable3,
@@ -48,7 +49,7 @@ fn scs2len<T: Eq>(s1: &[T], s2: &[T]) -> Vec<Vec<i32>> {
     dp
 }
 
-fn scs3len<T: Eq + Copy + std::hash::Hash>(s1: &[T], s2: &[T], s3: &[T]) -> Vec<Vec<Vec<i32>>> {
+fn scs3len<T: Eq + Copy + Hash>(s1: &[T], s2: &[T], s3: &[T]) -> Vec<Vec<Vec<i32>>> {
     let len1 = s1.len();
     let len2 = s2.len();
     let len3 = s3.len();
@@ -114,7 +115,7 @@ fn scs3len<T: Eq + Copy + std::hash::Hash>(s1: &[T], s2: &[T], s3: &[T]) -> Vec<
     dp
 }
 
-fn bound_table2<T: Eq + Copy + std::hash::Hash>(instance: &ScspInstance<T>) -> BoundTable2 {
+fn bound_table2<T: Eq + Copy + Hash>(instance: &ScspInstance<T>) -> BoundTable2 {
     let mut bound_table = Vec::new();
 
     for (idx1, s1) in instance.seqs.iter().enumerate() {
@@ -128,7 +129,7 @@ fn bound_table2<T: Eq + Copy + std::hash::Hash>(instance: &ScspInstance<T>) -> B
     bound_table
 }
 
-fn bound_table3<T: Eq + Copy + std::hash::Hash>(instance: &ScspInstance<T>) -> BoundTable3 {
+fn bound_table3<T: Eq + Copy + Hash>(instance: &ScspInstance<T>) -> BoundTable3 {
     let mut bound_table = Vec::new();
     for (idx1, s1) in instance.seqs.iter().enumerate().take(BOUND3_MAGIC) {
         let mut bound_row = Vec::with_capacity(idx1);
@@ -145,7 +146,7 @@ fn bound_table3<T: Eq + Copy + std::hash::Hash>(instance: &ScspInstance<T>) -> B
     bound_table
 }
 
-impl<T: Eq + Copy + std::hash::Hash + Default> ModelRpid<T> {
+impl<T: Eq + Copy + Hash + Default> ModelRpid<T> {
     pub fn new(instance: &ScspInstance<T>) -> Self {
         let mut instance = instance.clone();
         instance
@@ -201,7 +202,7 @@ pub struct ScspState {
     sol_len: i32,
 }
 
-impl<T: Eq + Copy + std::hash::Hash> Dp for ModelRpid<T> {
+impl<T: Eq + Copy + Hash> Dp for ModelRpid<T> {
     type State = ScspState;
     type CostType = i32;
     type Label = T;
@@ -311,7 +312,7 @@ impl<T: Eq + Copy + std::hash::Hash> Dp for ModelRpid<T> {
 #[derive(PartialEq, Eq, Hash)]
 pub struct ScspKey;
 
-impl<T: Eq + Copy + std::hash::Hash> Dominance for ModelRpid<T> {
+impl<T: Eq + Copy + Hash> Dominance for ModelRpid<T> {
     type State = ScspState;
     // type Key = Vec<usize>;
     type Key = ScspKey;
@@ -369,7 +370,7 @@ impl<T: Eq + Copy + std::hash::Hash> Dominance for ModelRpid<T> {
     }
 }
 
-impl<T: Eq + Copy + std::hash::Hash> Bound for ModelRpid<T> {
+impl<T: Eq + Copy + Hash> Bound for ModelRpid<T> {
     type State = ScspState;
     type CostType = i32;
 
