@@ -46,12 +46,12 @@ impl std::str::FromStr for ScspInstance<char> {
 }
 
 #[derive(Default)]
-pub struct ScspSolution<T: Eq + Copy + std::hash::Hash> {
+pub struct ScspSolution<T: Eq + Copy + Hash> {
     pub seq: Option<Vec<T>>,
     pub bound: Option<i32>,
 }
 
-impl<T: Eq + Copy + std::hash::Hash> ScspSolution<T> {
+impl<T: Eq + Copy + Hash> ScspSolution<T> {
     /// 解の目的関数値を返す.
     pub fn objective(&self) -> Option<i32> {
         self.seq.as_ref().map(|x| x.len() as i32)
