@@ -27,7 +27,7 @@ impl<T: Eq + Copy + Hash> ScspInstance<T> {
     }
 
     /// 問題インスタンスに出現する文字の集合を返す.
-    pub fn chars(&self) -> HashSet<T> {
+    pub fn set(&self) -> HashSet<T> {
         self.set.clone()
     }
 }

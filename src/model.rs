@@ -231,7 +231,7 @@ impl<T: Eq + Copy + std::hash::Hash> Dp for ModelRpid<T> {
         state: &Self::State,
     ) -> impl IntoIterator<Item = (Self::State, Self::CostType, Self::Label)> {
         // self.instance
-        //     .chars()
+        //     .set()
         //     .iter()
         //     .filter(|&c| {
         //         state
@@ -263,7 +263,7 @@ impl<T: Eq + Copy + std::hash::Hash> Dp for ModelRpid<T> {
 
         let mut succs_with_weight = self
             .instance
-            .chars()
+            .set()
             .iter()
             .filter(|&c| {
                 state
