@@ -36,6 +36,7 @@
           nativeBuildInputs = [
             rustToolchain
             pkgs.wasm-pack
+            pkgs.cargo-about
           ];
           buildInputs = [
           ];
