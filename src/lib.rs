@@ -41,6 +41,6 @@ impl From<scsp::ScspSolution<char>> for ComputeResult {
 pub fn superseq(input: &str) -> ComputeResult {
     let instance: scsp::ScspInstance<char> = input.parse().unwrap();
     let model = model::ModelRpid::new(&instance);
-    let solution = model.solve(1u32);
+    let solution = model.solve(10);
     ComputeResult::from(solution)
 }

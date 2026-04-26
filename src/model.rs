@@ -178,7 +178,7 @@ impl<T: Eq + Copy + Hash + Default> ModelRpid<T> {
             primal_bound: Some(self.instance.seqs.iter().map(|seq| seq.len() as i32).sum()),
             dual_bound: self.instance.seqs.iter().map(|seq| seq.len() as i32).max(),
             quiet: false,
-            time_limit: Some(time_limit as f64 * 60.),
+            time_limit: Some(time_limit as f64),
             ..Default::default()
         };
         let cabs_param = CabsParameters::default();

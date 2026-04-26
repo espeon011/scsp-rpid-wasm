@@ -20,7 +20,7 @@ xusfcfzpeecvwantfmgqzu";
 fn main() {
     let instance: scsp::ScspInstance<char> = INPUT.parse().unwrap();
     let model = model::ModelRpid::new(&instance);
-    let solution = model.solve(1u32);
+    let solution = model.solve(10);
 
     println!();
     println!("Objective: {}", solution.objective().unwrap());
