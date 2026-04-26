@@ -19,8 +19,10 @@ impl ComputeResult {
     pub fn dual_bound(&self) -> f32 {
         self.dual_bound_inner.unwrap_or(f32::NAN)
     }
+}
 
-    fn from_solution(sol: scsp::ScspSolution<char>) -> Self {
+impl From<scsp::ScspSolution<char>> for ComputeResult {
+    fn from(sol: scsp::ScspSolution<char>) -> Self {
         if let (Some(seq), Some(bound)) = (sol.seq, sol.bound) {
             ComputeResult {
                 solution_inner: seq.iter().collect(),
@@ -40,5 +42,5 @@ pub fn superseq(input: &str) -> ComputeResult {
     let instance: scsp::ScspInstance<char> = input.parse().unwrap();
     let model = model::ModelRpid::new(&instance);
     let solution = model.solve(1u32);
-    ComputeResult::from_solution(solution)
+    ComputeResult::from(solution)
 }
